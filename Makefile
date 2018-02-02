@@ -7,7 +7,11 @@ local: $(HTML)
 deploy: $(HTML)
 
 %.html:%.md
-	markdown $< > $@
+	echo '<!doctype html><html lang=en><head><meta charset=utf-8><title>' > $@
+	grep '^# ' $< | sed 's/^# //' >> $@
+	echo '</title></head><body>' >> $@
+	markdown $< >> $@
+	echo '</body></html>' >> $@
 
 clean:
 	find src/ -regex '.*\.html' -exec rm -vf {} \;
