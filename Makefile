@@ -9,7 +9,9 @@ deploy: $(HTML)
 %.html:%.md
 	echo '<!doctype html><html lang=en><head><meta charset=utf-8><title>' > $@
 	grep '^# ' $< | sed 's/^# //' >> $@
-	echo '</title></head><body>' >> $@
+	echo '</title>' >> $@
+	cat style.css >> $@
+	echo '</head><body>' >> $@
 	markdown $< >> $@
 	echo '</body></html>' >> $@
 
