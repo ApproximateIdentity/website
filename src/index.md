@@ -10,4 +10,4 @@ to meet the requirements of the 21st century.
 These pages are generated from markdown files which can be found
 [here](https://github.com/ApproximateIdentity/website).
 
-You can contact me at `tom.nyberg(at)gmail.com`.
+You can contact me at `twn(at)thomasnyberg.com`.
