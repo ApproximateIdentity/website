@@ -3,6 +3,11 @@
 # Releasing the gil
 ### 2018-02-06
 
+**Updated 2020-11-30:** David (who enjoys his privacy) pointed out where my
+explanation was a bit lacking, so I clarified the reason for the `print()`
+function's race condition in the section with the pure python implementation.
+Thanks a lot for the feedback!
+
 This is a sort of continuation of a previous article: [What are (c)python
 extension modules?](https://thomasnyberg.com/what_are_extension_modules.html).
 That article took a fairly low-level look at what is actually going on with
@@ -574,9 +579,39 @@ If you run it you can expect to see something similar to this:
      8
 
 As we see, our pure python version of `print_list()` is also not thread-safe.
-In order to fix this, the only portion of the code we have to protect is the
-part that prints (just as before). Hence if we add locks into our code as
-follows, we no longer see a race condition:
+The reason for this is because the `print()` function also releases the gil.
+Python implements the `print()` function by a `write()` call to standard out.
+This happens on line 1257 here:
+
+`./Python/fileutils.c`
+***
+    ...
+
+	1250     if (gil_held) {
+	1251         do {
+	1252             Py_BEGIN_ALLOW_THREADS
+	1253             errno = 0;
+	1254 #ifdef MS_WINDOWS
+	1255             n = write(fd, buf, (int)count);
+	1256 #else
+	1257             n = write(fd, buf, count);
+	1258 #endif
+	1259             /* save/restore errno because PyErr_CheckSignals()
+	1260              * and PyErr_SetFromErrno() can modify it */
+	1261             err = errno;
+	1262             Py_END_ALLOW_THREADS
+	1263         } while (n < 0 && err == EINTR &&
+	1264                 !(async_err = PyErr_CheckSignals()));
+	1265     }
+
+    ...
+***
+
+Python releases the gil whenever IO is performed. Normally this is what we
+want, but in this case it means that we have exactly the same race condition as
+earlier in the C implementation. In order to fix this, the only portion of the
+code we have to protect is the part that prints (just as before). Hence if we
+add locks into our code as follows, we no longer see a race condition:
 
 `pure_concurrency_test.py`
 ***
